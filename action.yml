@@ -12,5 +12,9 @@ runs:
     env:
       GITHUB_ACTION_PATH: ${{ github.action_path }}
   - name: Run
-    run: go run main.go
+    run: |
+      cd ${{ github.action_path }}
+      pwd
+      ls -la
+      go run main.go
     shell: bash
