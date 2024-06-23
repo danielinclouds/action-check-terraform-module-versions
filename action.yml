@@ -6,5 +6,11 @@ description: >
 runs: 
   using: composite
   steps:
-  - run: go run main.go
+  - name: Set GitHub Path
+    run: echo "$GITHUB_ACTION_PATH" >> $GITHUB_PATH
+    shell: bash
+    env:
+      GITHUB_ACTION_PATH: ${{ github.action_path }}
+  - name: Run
+    run: go run main.go
     shell: bash
