@@ -1,0 +1,10 @@
+name: "Check Terraform Module versions"
+description: >
+  Check Terraform Module versions in each file and compare with 
+  the latest version available in the Terraform Registry.
+
+runs: 
+  using: composite
+  steps:
+  - run: go run main.go
+    shell: bash
