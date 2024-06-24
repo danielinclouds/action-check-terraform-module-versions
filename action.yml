@@ -13,6 +13,7 @@ runs:
       GITHUB_ACTION_PATH: ${{ github.action_path }}
   - name: Run
     run: |
+      export WORKING_DIRECTORY=$(pwd)
       cd ${{ github.action_path }}
       pwd
       ls -la

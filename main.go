@@ -23,7 +23,8 @@ type Module struct {
 
 func main() {
 
-	files := listTFFiles(".")
+	workingDirectory := os.Getenv("WORKING_DIRECTORY")
+	files := listTFFiles(workingDirectory)
 	for _, f := range files {
 		config := getConfig(f)
 
