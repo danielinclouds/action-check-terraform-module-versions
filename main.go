@@ -33,7 +33,7 @@ func main() {
 			moduleVersion := m.Version
 
 			if moduleVersion != latestVersion {
-				fmt.Printf("File: %s Module: %s Source: %s has version %s, latest version is %s\n", f, m.Name, m.Source, moduleVersion, latestVersion)
+				fmt.Printf("File: %s Module: %s Source: %s has version %s, latest version is %s\n", strings.TrimPrefix(f, workingDirectory), m.Name, m.Source, moduleVersion, latestVersion)
 			}
 		}
 	}
