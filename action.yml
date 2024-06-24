@@ -6,16 +6,14 @@ description: >
 runs: 
   using: composite
   steps:
-  - name: Set GitHub Path
-    run: echo "$GITHUB_ACTION_PATH" >> $GITHUB_PATH
-    shell: bash
-    env:
-      GITHUB_ACTION_PATH: ${{ github.action_path }}
+  # - name: Set GitHub Path
+  #   run: echo "$GITHUB_ACTION_PATH" >> $GITHUB_PATH
+  #   shell: bash
+  #   env:
+  #     GITHUB_ACTION_PATH: ${{ github.action_path }}
   - name: Run
     run: |
-      export WORKING_DIRECTORY=$(pwd)
+      export WORKING_DIRECTORY=${{ github.workspace }}
       cd ${{ github.action_path }}
-      pwd
-      ls -la
       go run main.go
     shell: bash
