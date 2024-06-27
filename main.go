@@ -1,13 +1,17 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
+	"github.com/google/go-github/v62/github"
 	"github.com/hashicorp/hcl/v2/hclsimple"
 )
 
@@ -24,13 +28,21 @@ type Module struct {
 func main() {
 
 	workingDirectory := os.Getenv("WORKING_DIRECTORY")
+	personalAccessToken := os.Getenv("PERSONAL_ACCESS_TOKEN")
 	files := listTFFiles(workingDirectory)
 	for _, f := range files {
 		config := getConfig(f)
 
 		for _, m := range config.Modules {
-			latestVersion := getLatestGCPModuleVersion(m.Source)
-			moduleVersion := m.Version
+			var latestVersion string
+			var moduleVersion string
+			if strings.HasPrefix(m.Source, "git::") {
+				latestVersion = getLatestGitHubModuleVersion(m.Source, personalAccessToken)
+				moduleVersion = getGitModuleVersion(m.Source)
+			} else {
+				latestVersion = getLatestRegistryModuleVersion(m.Source)
+				moduleVersion = m.Version
+			}
 
 			if moduleVersion != latestVersion {
 				fmt.Printf("File: %s Module: %s Source: %s has version %s, latest version is %s\n", strings.TrimPrefix(f, workingDirectory), m.Name, m.Source, moduleVersion, latestVersion)
@@ -77,7 +89,7 @@ func getConfig(path string) Config {
 	return config
 }
 
-func getLatestGCPModuleVersion(source string) string {
+func getLatestRegistryModuleVersion(source string) string {
 
 	url := fmt.Sprintf("https://registry.terraform.io/v1/modules/%s", source)
 
@@ -100,4 +112,48 @@ func getLatestGCPModuleVersion(source string) string {
 	}
 
 	return moduleVersion.Version
+}
+
+func getLatestGitHubModuleVersion(source, personalAccessToken string) string {
+
+	source = strings.TrimPrefix(source, "git::https://github.com/")
+	source = strings.Split(source, ".git")[0]
+	owner := strings.Split(source, "/")[0]
+	repo := strings.Split(source, "/")[1]
+
+	// Create a GitHub client
+	client := github.NewClient(nil).WithAuthToken(personalAccessToken)
+
+	// List tags
+	opts := &github.ListOptions{PerPage: 10}
+	var allTags []*github.RepositoryTag
+
+	for {
+		tags, resp, err := client.Repositories.ListTags(context.Background(), owner, repo, opts)
+		if err != nil {
+			log.Fatalf("Error fetching tags: %v", err)
+		}
+		allTags = append(allTags, tags...)
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
+	}
+
+	if len(allTags) == 0 {
+		log.Println("No tags found.")
+		return ""
+	}
+
+	// Sort tags by their name (assuming tags are in semantic versioning format)
+	sort.Slice(allTags, func(i, j int) bool {
+		return allTags[i].GetName() > allTags[j].GetName()
+	})
+
+	latestTag := allTags[0]
+	return latestTag.GetName()
+}
+
+func getGitModuleVersion(source string) string {
+	return strings.Split(source, "?ref=")[1]
 }
